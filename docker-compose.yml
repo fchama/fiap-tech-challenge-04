@@ -1,0 +1,39 @@
+services:
+  api:
+    build:
+      context: ./backend
+    container_name: blog-api
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongo:27017/blog_db
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      SEED_TEACHER_NAME: ${SEED_TEACHER_NAME:-Administrador}
+      SEED_TEACHER_EMAIL: ${SEED_TEACHER_EMAIL:-admin@blog.com}
+      SEED_TEACHER_PASSWORD: ${SEED_TEACHER_PASSWORD:-admin123}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    container_name: blog-mongo
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
